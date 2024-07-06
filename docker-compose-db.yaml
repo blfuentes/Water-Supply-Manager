@@ -11,6 +11,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     ports:
       - 27017:27017
+    networks:
+      - dbnetwork
 
   mongo-express:
     image: mongo-express
@@ -22,3 +24,10 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
       ME_CONFIG_BASICAUTH: false
+    networks:
+      - dbnetwork
+
+networks:
+  dbnetwork:
+    driver: bridge
+    name: mongodb-network
