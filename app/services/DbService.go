@@ -14,58 +14,43 @@ import (
 	models "water-supply-manager/models"
 )
 
-func Connect() error {
+func Init() (*mongo.Client, error) {
+	// load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
+		return nil, err
 	} else {
 		log.Println("Environment variables loaded")
-		// fmt.Println("MONGODB_URI:", os.Getenv("MONGODB_URI"))
 	}
+
+	// get the MongoDB URI from the environment
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
 		log.Fatal("Set your 'MONGODB_URI' environment variable. " +
 			"See: " +
 			"www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
+		return nil, fmt.Errorf("Set your 'MONGODB_URI' environment variable")
 	} else {
 		log.Println("MONGODB_URI:", uri)
 	}
+
+	// connect to MongoDB for verification
 	client, err := mongo.Connect(context.TODO(), options.Client().
 		ApplyURI(uri))
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		if err := client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
-	return nil
+
+	return client, nil
 }
 
-func GetInvoices() ([]models.Invoice, error) {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
-		fmt.Println("env file not found")
-	} else {
-		log.Println("Environment variables loaded")
-		fmt.Println("MONGODB_URI:", os.Getenv("MONGODB_URI"))
-	}
-	uri := os.Getenv("MONGODB_URI")
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
-	if err != nil {
-		fmt.Println("Error connecting to MongoDB")
-		panic(err)
-	}
-	defer func() {
-		if err := client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
+func GetInvoices(client *mongo.Client) ([]models.Invoice, error) {
+	log.Println("Service::Getting invoices")
 
 	collection := client.Database("local").Collection("Invoices")
 	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err == mongo.ErrNoDocuments {
-		fmt.Println("No documents found")
+		log.Println("No documents found")
 		return nil, nil
 	}
 	if err != nil {
@@ -84,4 +69,34 @@ func GetInvoices() ([]models.Invoice, error) {
 	}
 
 	return results, nil
+}
+
+func GetInvoice(client *mongo.Client, id int64) (models.Invoice, error) {
+	log.Println("Service::Getting invoice")
+
+	collection := client.Database("local").Collection("Invoices")
+	filter := bson.D{{"ID", id}}
+	var result models.Invoice
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		log.Println("No documents found")
+		return models.Invoice{}, nil
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	return result, nil
+}
+
+func PostInvoice(client *mongo.Client, invoice models.Invoice) error {
+	log.Println("Service::Posting invoice")
+
+	collection := client.Database("local").Collection("Invoices")
+	_, err := collection.InsertOne(context.TODO(), invoice)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
 }
