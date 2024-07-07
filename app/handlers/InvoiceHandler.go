@@ -38,7 +38,7 @@ func GetInvoice(client *mongo.Client, c *gin.Context) {
 
 // post a new invoice
 func PostInvoice(client *mongo.Client, c *gin.Context) {
-	var newInvoice models.Invoice
+	var newInvoice models.InvoiceDto
 	if err := c.BindJSON(&newInvoice); err != nil {
 		return
 	}

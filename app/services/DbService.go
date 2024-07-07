@@ -44,7 +44,7 @@ func Init() (*mongo.Client, error) {
 	return client, nil
 }
 
-func GetInvoices(client *mongo.Client) ([]models.Invoice, error) {
+func GetInvoices(client *mongo.Client) ([]models.InvoiceDto, error) {
 	log.Println("Service::Getting invoices")
 
 	collection := client.Database("local").Collection("Invoices")
@@ -58,42 +58,42 @@ func GetInvoices(client *mongo.Client) ([]models.Invoice, error) {
 	}
 	defer cursor.Close(context.TODO())
 
-	var results []models.Invoice
+	var results []models.InvoiceDto
 	for cursor.Next(context.TODO()) {
 		var elem models.Invoice
 		err := cursor.Decode(&elem)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, elem)
+		results = append(results, elem.ToDto())
 	}
 
 	return results, nil
 }
 
-func GetInvoice(client *mongo.Client, id int64) (models.Invoice, error) {
+func GetInvoice(client *mongo.Client, id int64) (models.InvoiceDto, error) {
 	log.Println("Service::Getting invoice")
 
 	collection := client.Database("local").Collection("Invoices")
 	filter := bson.D{{"ID", id}}
-	var result models.Invoice
-	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	var resultdb models.Invoice
+	err := collection.FindOne(context.TODO(), filter).Decode(&resultdb)
 	if err == mongo.ErrNoDocuments {
 		log.Println("No documents found")
-		return models.Invoice{}, nil
+		return models.InvoiceDto{}, nil
 	}
 	if err != nil {
 		panic(err)
 	}
 
-	return result, nil
+	return resultdb.ToDto(), nil
 }
 
-func PostInvoice(client *mongo.Client, invoice models.Invoice) error {
+func PostInvoice(client *mongo.Client, invoice models.InvoiceDto) error {
 	log.Println("Service::Posting invoice")
 
 	collection := client.Database("local").Collection("Invoices")
-	_, err := collection.InsertOne(context.TODO(), invoice)
+	_, err := collection.InsertOne(context.TODO(), invoice.ToModel())
 	if err != nil {
 		panic(err)
 	}
