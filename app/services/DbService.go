@@ -100,3 +100,31 @@ func PostInvoice(client *mongo.Client, invoice models.InvoiceDto) error {
 
 	return nil
 }
+
+func UpdateInvoice(client *mongo.Client, id int64, invoice models.InvoiceDto) error {
+	log.Println("Service::Updating invoice")
+
+	collection := client.Database("local").Collection("Invoices")
+	filter := bson.D{{"ID", id}}
+	update := bson.D{{"$set", invoice.ToModel()}}
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+
+}
+
+func DeleteInvoice(client *mongo.Client, id int64) error {
+	log.Println("Service::Deleting invoice")
+
+	collection := client.Database("local").Collection("Invoices")
+	filter := bson.D{{"ID", id}}
+	_, err := collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}

@@ -29,6 +29,18 @@ func PostInvoiceHandler(client *mongo.Client) gin.HandlerFunc {
 	}
 }
 
+func UpdateInvoiceHandler(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		handlers.UpdateInvoice(client, c)
+	}
+}
+
+func DeleteInvoiceHandler(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		handlers.DeleteInvoice(client, c)
+	}
+}
+
 func main() {
 	// This is the main function
 	router := gin.Default()
@@ -46,6 +58,8 @@ func main() {
 		router.GET("/invoices", GetInvoicesHandler(dbClient))
 		router.GET("/invoices/:id", GetInvoiceHandler(dbClient))
 		router.POST("/invoices", PostInvoiceHandler(dbClient))
+		router.PUT("/invoices/:id", UpdateInvoiceHandler(dbClient))
+		router.DELETE("/invoices/:id", DeleteInvoiceHandler(dbClient))
 
 		router.Run("0.0.0.0:8080")
 	}

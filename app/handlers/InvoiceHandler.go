@@ -50,3 +50,41 @@ func PostInvoice(client *mongo.Client, c *gin.Context) {
 
 	c.IndentedJSON(http.StatusCreated, newInvoice)
 }
+
+// update an invoice
+func UpdateInvoice(client *mongo.Client, c *gin.Context) {
+	if id, err := strconv.ParseInt(c.Param("id"), 10, 0); err == nil {
+
+		var updatedInvoice models.InvoiceDto
+		if err := c.BindJSON(&updatedInvoice); err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+			return
+		}
+
+		if updatedInvoice.ID != id {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "ID in request does not match ID in body"})
+			return
+		}
+
+		if err := services.UpdateInvoice(client, id, updatedInvoice); err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, updatedInvoice)
+	}
+}
+
+// delete an invoice
+func DeleteInvoice(client *mongo.Client, c *gin.Context) {
+	if id, err := strconv.ParseInt(c.Param("id"), 10, 0); err == nil {
+		if err := services.DeleteInvoice(client, id); err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, gin.H{"message": "invoice deleted"})
+		return
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "invoice not found"})
+}
